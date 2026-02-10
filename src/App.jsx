@@ -3,6 +3,34 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence, useScroll, useTransform, useSpring, useMotionValue } from 'framer-motion';
 import { flowers, categories } from './data/flowers';
 
+function FloralScrollProgress() {
+    const { scrollYProgress } = useScroll();
+    const scaleY = useSpring(scrollYProgress, {
+        stiffness: 100,
+        damping: 30,
+        restDelta: 0.001
+    });
+
+    const top = useTransform(scrollYProgress, [0, 1], ["0%", "100%"]);
+    const rotate = useTransform(scrollYProgress, [0, 1], [0, 720]);
+    const scale = useTransform(scrollYProgress, [0, 1], [0.8, 1.4]);
+
+    return (
+        <div className="fixed right-4 md:right-8 top-1/4 bottom-1/4 w-[2px] bg-[#fb6f92]/20 z-50 pointer-events-none hidden md:block">
+            <motion.div 
+                className="absolute top-0 left-0 right-0 bg-gradient-to-b from-[#fb6f92] to-[#590d22] origin-top rounded-full"
+                style={{ scaleY }}
+            />
+            <motion.div 
+                className="absolute left-1/2 -translate-x-1/2 -translate-y-1/2 w-12 h-12 bg-white rounded-full border-2 border-[#fb6f92] shadow-xl flex items-center justify-center p-2 overflow-hidden"
+                style={{ top, rotate, scale }}
+            >
+                <img src="/img/logo.jpg" alt="Rose" className="w-full h-full object-contain rounded-full" />
+            </motion.div>
+        </div>
+    );
+}
+
 function App() {
   const [showIntro, setShowIntro] = useState(true);
   const { scrollY } = useScroll();
@@ -48,6 +76,7 @@ function App() {
             animate={{ opacity: 1 }}
             transition={{ duration: 1 }}
           >
+            <FloralScrollProgress />
              {/* Dynamic Background */}
             <motion.div 
                 className="fixed inset-0 pointer-events-none z-0 bg-gradient-to-br from-[#fff0f3] via-white to-[#ffe5ec]"
@@ -97,50 +126,47 @@ function BloomingIntro({ onComplete }) {
             className="fixed inset-0 z-[999] bg-[#fff0f3] flex items-center justify-center overflow-hidden"
             exit={{ opacity: 0, transition: { duration: 1 } }}
         >
-            {/* Bottom-Left Bouquet Entry */}
-            <motion.div
-                className="absolute left-[-10%] bottom-[-10%] w-[70vw] md:w-[40vw] z-10 origin-bottom-left"
-                initial={{ x: "-100%", y: "50%", rotate: -45, opacity: 0 }}
-                animate={{ 
-                    x: ["-50%", "0%", "0%"], 
-                    y: ["50%", "0%", "0%"],
-                    rotate: [-45, -10, 0],
-                    opacity: [0, 1, 1],
-                    scale: [0.8, 1, 4], // Bloom Huge
-                    filter: ["blur(0px)", "blur(0px)", "blur(20px)"]
-                }}
-                transition={{ 
-                    duration: 4, 
-                    times: [0, 0.5, 1],
-                    ease: "easeInOut"
-                }}
-            >
-                 {/* Premium Rose Bouquet */}
-                 <img src={flowers[2].image} alt="Bouquet Left" className="w-full h-full object-contain drop-shadow-2xl" />
-            </motion.div>
-
-            {/* Bottom-Right Bouquet Entry */}
-            <motion.div
-                className="absolute right-[-10%] bottom-[-10%] w-[70vw] md:w-[40vw] z-10 origin-bottom-right"
-                initial={{ x: "100%", y: "50%", rotate: 45, opacity: 0 }}
-                animate={{ 
-                    x: ["50%", "0%", "0%"], 
-                    y: ["50%", "0%", "0%"],
-                    rotate: [45, 10, 0],
-                    opacity: [0, 1, 1],
-                    scale: [0.8, 1, 4], // Bloom Huge
-                    filter: ["blur(0px)", "blur(0px)", "blur(20px)"]
-                }}
-                transition={{ 
-                    duration: 4, 
-                    times: [0, 0.5, 1],
-                    ease: "easeInOut",
-                    delay: 0.1
-                }}
-            >
-                 {/* Mirror image for symmetry */}
-                 <img src={flowers[2].image} alt="Bouquet Right" className="w-full h-full object-contain scale-x-[-1] drop-shadow-2xl" />
-            </motion.div>
+            {/* Multi-Bouquet Explosion */}
+            {[
+                { left: '-5%', bottom: '-10%', x: '-100%', y: '50%', rotate: -45, delay: 0 },
+                { right: '-5%', bottom: '-10%', x: '100%', y: '50%', rotate: 45, delay: 0.1 },
+                { left: '15%', bottom: '-20%', x: '-50%', y: '100%', rotate: -20, delay: 0.3 },
+                { right: '15%', bottom: '-20%', x: '50%', y: '100%', rotate: 20, delay: 0.4 },
+                { left: '40%', bottom: '-25%', x: '0%', y: '100%', rotate: 0, delay: 0.6 },
+            ].map((cfg, i) => (
+                <motion.div
+                    key={i}
+                    className="absolute w-[60vw] md:w-[35vw] z-10"
+                    style={{ 
+                        left: cfg.left, 
+                        right: cfg.right, 
+                        bottom: cfg.bottom,
+                        originX: cfg.left ? 0 : 1,
+                        originY: 1
+                    }}
+                    initial={{ x: cfg.x, y: cfg.y, rotate: cfg.rotate, opacity: 0 }}
+                    animate={{ 
+                        x: 0, 
+                        y: 0,
+                        rotate: cfg.rotate * 0.2,
+                        opacity: [0, 1, 1],
+                        scale: [0.8, 1, 5],
+                        filter: ["blur(0px)", "blur(0px)", "blur(30px)"]
+                    }}
+                    transition={{ 
+                        duration: 4.5, 
+                        times: [0, 0.4, 1],
+                        ease: "easeInOut",
+                        delay: cfg.delay
+                    }}
+                >
+                    <img 
+                        src={flowers[2].image} 
+                        alt="Bouquet" 
+                        className={`w-full h-full object-contain drop-shadow-2xl ${cfg.right ? 'scale-x-[-1]' : ''}`} 
+                    />
+                </motion.div>
+            ))}
 
              {/* Branding Text Reveal */}
             <motion.div 
@@ -293,56 +319,72 @@ function AnimatedGridCollection({ flowers, onFlowerClick }) {
                     <h2 className="text-4xl md:text-6xl font-display mt-4 text-[#590d22]">In Full Bloom</h2>
                 </motion.div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 cursor-pointer">
-                    {flowers.map((flower, index) => (
+                <motion.div 
+                    variants={{
+                        hidden: { opacity: 0 },
+                        visible: {
+                            opacity: 1,
+                            transition: { staggerChildren: 0.15 }
+                        }
+                    }}
+                    initial="hidden"
+                    whileInView="visible"
+                    viewport={{ once: true, margin: "-100px" }}
+                    className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+                >
+                    {flowers.map((flower) => (
                         <motion.div
                             key={flower.id}
-                            initial={{ opacity: 0, y: 50 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true, margin: "-50px" }}
-                            transition={{ duration: 0.6, delay: index * 0.1 }}
+                            variants={{
+                                hidden: { opacity: 0, scale: 0.8, y: 60, rotateX: 25 },
+                                visible: { 
+                                    opacity: 1, 
+                                    scale: 1, 
+                                    y: 0, 
+                                    rotateX: 0,
+                                    transition: { type: "spring", stiffness: 80, damping: 15 }
+                                }
+                            }}
+                            whileHover={{ y: -15, scale: 1.02, transition: { duration: 0.3 } }}
                             onClick={() => onFlowerClick(flower)}
-                            className="group relative bg-white/40 backdrop-blur-md rounded-3xl overflow-hidden border border-white/50 shadow-sm hover:shadow-xl transition-all duration-500 hover:-translate-y-2"
+                            className="group relative bg-white/40 backdrop-blur-xl rounded-[2.5rem] overflow-hidden border border-white/40 shadow-2xl transition-all duration-500 hover:bg-white/60 cursor-pointer h-full flex flex-col"
                         >
                             {/* Image Area */}
-                            <div className="relative aspect-[3/4] overflow-hidden">
+                            <div className="relative aspect-[4/5] overflow-hidden">
                                 <img 
                                     src={flower.image} 
                                     alt={flower.nameThai}
-                                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                                    className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-110"
                                 />
-                                <div className="absolute inset-0 bg-gradient-to-t from-[#590d22]/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                <div className="absolute inset-0 bg-gradient-to-t from-[#590d22]/80 via-transparent to-transparent opacity-60 group-hover:opacity-80 transition-opacity"></div>
                                 
-                                {/* Quick Actions */}
-                                <div className="absolute bottom-4 right-4 flex gap-2 translate-y-10 group-hover:translate-y-0 transition-transform duration-500">
-                                    <button className="w-10 h-10 rounded-full bg-white/90 text-[#fb6f92] flex items-center justify-center hover:bg-[#fb6f92] hover:text-white transition-colors shadow-lg">
-                                        ❤️
-                                    </button>
+                                {/* Category Badge */}
+                                <div className="absolute top-6 left-6">
+                                    <span className="bg-[#fb6f92] text-white text-[10px] font-bold uppercase tracking-[0.2em] px-4 py-1.5 rounded-full shadow-lg">
+                                        {flower.category}
+                                    </span>
                                 </div>
                             </div>
 
                             {/* Content Area */}
-                            <div className="p-6">
-                                <div className="flex justify-between items-start mb-2">
-                                     <span className="text-[#fb6f92] text-xs font-bold uppercase tracking-wider">{flower.category}</span>
-                                     <span className="text-[#590d22]/40 text-xs">More Info ↗</span>
-                                </div>
-                                <h3 className="text-2xl font-display text-[#590d22] mb-1">{flower.nameThai}</h3>
-                                <p className="text-[#590d22]/60 text-sm font-serif italic mb-4">{flower.name}</p>
+                            <div className="p-8 flex-grow flex flex-col">
+                                <h3 className="text-3xl font-display text-[#590d22] mb-1">{flower.nameThai}</h3>
+                                <p className="text-[#590d22]/50 text-sm font-display italic mb-4">{flower.name}</p>
                                 
-                                <div className="flex items-center justify-between border-t border-[#590d22]/10 pt-4 mt-4">
+                                <div className="mt-auto flex items-center justify-between border-t border-[#590d22]/10 pt-6">
                                     <div>
-                                        <p className="text-[10px] text-[#590d22]/40 uppercase tracking-widest">Starting at</p>
-                                        <p className="text-xl font-bold text-[#fb6f92]">฿{flower.price.replace('เริ่ม ', '')}</p>
+                                        <p className="text-[10px] text-[#590d22]/40 uppercase tracking-widest mb-1">Price</p>
+                                        <p className="text-2xl font-bold text-[#fb6f92]">฿{flower.price.replace('เริ่ม ', '')}</p>
                                     </div>
-                                    <button className="px-5 py-2 rounded-full bg-[#590d22] text-white text-xs font-bold uppercase tracking-widest hover:bg-[#fb6f92] transition-colors">
-                                        View
-                                    </button>
+                                    <div className="flex items-center gap-2 group-hover:translate-x-2 transition-transform duration-300">
+                                        <span className="text-xs font-bold uppercase tracking-widest text-[#590d22]">Details</span>
+                                        <div className="h-px w-8 bg-[#fb6f92]"></div>
+                                    </div>
                                 </div>
                             </div>
                         </motion.div>
                     ))}
-                </div>
+                </motion.div>
             </div>
         </section>
     );
